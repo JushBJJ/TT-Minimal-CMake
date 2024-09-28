@@ -1,0 +1,7 @@
+.cache
+.cpmcache/
+build/
+CMakeCache.txt
+CmakeFiles/
+*.swp
+*~
