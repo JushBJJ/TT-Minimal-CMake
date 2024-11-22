@@ -1,34 +1,17 @@
-# Bookmarks
-# (1) Project Name
-# (2) Executable
-
-cmake_minimum_required(VERSION 3.16)
-cmake_policy(VERSION 3.16)
-
-############################################
-# Check whether TT_METAL_HOME and ARCH_NAME
-# environemnt variables are set
-############################################
-
-if("$ENV{TT_METAL_HOME}" STREQUAL "")
-    message(FATAL_ERROR "TT_METAL_HOME environment variable is not set. Please do:\n\t1) export TT_METAL_HOME=<path_to_tt_metal>\n\t2) source <path_to_tt_metal>/setup.sh")
-endif()
-if("$ENV{ARCH_NAME}" STREQUAL "")
-    message(FATAL_ERROR "ARCH_NAME environment variable is not set. Please do:\n\texport ARCH_NAME=<arch_name>")
-endif()
+cmake_minimum_required(VERSION 3.16..3.30)
 
 ############################################
 # Project setup
 ############################################
 include(cmake/compilers.cmake)
 
-if (DEFINED ENV{CMAKE_C_COMPILER} AND DEFINED ENV{CMAKE_CXX_COMPILER})
+if(DEFINED ENV{CMAKE_C_COMPILER} AND DEFINED ENV{CMAKE_CXX_COMPILER})
     message(STATUS "Setting C and C++ compiler from environment variables")
     set(CMAKE_C_COMPILER $ENV{CMAKE_C_COMPILER})
     set(CMAKE_CXX_COMPILER $ENV{CMAKE_CXX_COMPILER})
 endif()
 
-if (CMAKE_CXX_COMPILER AND CMAKE_C_COMPILER)
+if(CMAKE_CXX_COMPILER AND CMAKE_C_COMPILER)
     message(STATUS "Using specifed C++ compiler: ${CMAKE_CXX_COMPILER}")
     message(STATUS "Using specifed C compiler: ${CMAKE_C_COMPILER}")
 else()
@@ -36,102 +19,153 @@ else()
     FIND_AND_SET_CLANG17()
 endif()
 
-# Set project after compiler setup'
-# (1) Set the name of your tt project name
-project(example-tt-project LANGUAGES CXX C)
-CHECK_COMPILERS()
+project(
+    MyFooProject
+    VERSION 0.1.0
+    LANGUAGES CXX
+)
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+add_executable(my_foo example.cpp)
 
-include(cmake/dependencies.cmake)
-
-add_library(stdlib INTERFACE)
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_link_libraries(stdlib INTERFACE c++ c++abi)
-    target_compile_options(stdlib INTERFACE -stdlib=libc++)
-else()
-    target_link_libraries(stdlib INTERFACE stdc++)
+if(NOT DEFINED ENV{TT_METAL_HOME})
+    message(FATAL_ERROR "Please set TT_METAL_HOME environment variable")
 endif()
 
-add_library(metal_common_libs INTERFACE)
-target_link_libraries(metal_common_libs INTERFACE
-    dl z pthread atomic hwloc numa stdlib # system libraries, hwloc has no cmake support, find_package won't find it
-)
-
-add_library(linker_flags INTERFACE)
-
-add_library(compiler_warnings INTERFACE)
-target_compile_options(compiler_warnings INTERFACE -Werror -Wdelete-non-virtual-dtor -Wreturn-type -Wswitch -Wuninitialized -Wno-unused-parameter)
-
-ADJUST_COMPILER_WARNINGS()
-
-add_library(compiler_flags INTERFACE)
-target_link_libraries(compiler_flags INTERFACE compiler_warnings stdlib)
-target_compile_options(compiler_flags INTERFACE -mavx2 -fPIC -DFMT_HEADER_ONLY -fvisibility-inlines-hidden -fno-lto)
-
-add_library(metal_header_directories INTERFACE)
-target_include_directories(metal_header_directories INTERFACE $ENV{TT_METAL_HOME}/tt_metal/hw/inc)
-target_include_directories(metal_header_directories SYSTEM INTERFACE ${reflect_SOURCE_DIR})
-
-if ("$ENV{ARCH_NAME}" STREQUAL "wormhole_b0")
-    target_include_directories(metal_header_directories INTERFACE tt_metal/hw/inc/wormhole
-        tt_metal/hw/inc/wormhole/wormhole_b0_defines
-        ${UMD_HOME}/device/wormhole
-        ${UMD_HOME}/src/firmware/riscv/wormhole
-    )
-else()
-    target_compile_options(compiler_flags INTERFACE -DDISABLE_ISSUE_3487_FIX)
-    target_include_directories(metal_header_directories INTERFACE
-        tt_metal/hw/inc/$ENV{ARCH_NAME}
-        ${UMD_HOME}/device/$ENV{ARCH_NAME}
-        ${UMD_HOME}/src/firmware/riscv/$ENV{ARCH_NAME}
-    )
+if(NOT DEFINED ENV{ARCH_NAME})
+    message(FATAL_ERROR "Please set ARCH_NAME to grayskull, wormhole_b0, or blackhole")
 endif()
 
+############################################
+# Dependencies setup
+############################################
+list(PREPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+set(ENV{CPM_SOURCE_CACHE} "${PROJECT_SOURCE_DIR}/.cpmcache")
+include(CPM)
 
-############################################################################################################################
-# Our actual project
-############################################################################################################################
+if(CMAKE_VERSION VERSION_LESS 3.25)
+    add_subdirectory(dependencies EXCLUDE_FROM_ALL)
+else()
+    add_subdirectory(dependencies EXCLUDE_FROM_ALL SYSTEM)
+endif()
 
-# (2)
-# Don't forget to rename "example-tt-project" to whatever you want to call your project Name
-# Rename `main.cpp` to the .cpp files you want to compile
+find_library(NUMA_LIBRARY NAMES numa REQUIRED)
 
-add_executable(example-tt-project
-                main.cpp
-                # others.cpp
+############################################
+# Target configuration
+############################################
+
+set_target_properties(my_foo PROPERTIES
+    CXX_STANDARD 20
+    CXX_STANDARD_REQUIRED ON
+    CXX_EXTENSIONS OFF
 )
 
-target_include_directories(example-tt-project PRIVATE
-                            metal_header_directories
-                            ${reflect_SOURCE_DIR}
-                            $ENV{TT_METAL_HOME}
-                            $ENV{TT_METAL_HOME}/build/lib
-                            $ENV{TT_METAL_HOME}/tt_metal
-                            $ENV{TT_METAL_HOME}/tt_metal/common
-                            $ENV{TT_METAL_HOME}/tt_metal/third_party/umd
-                            $ENV{TT_METAL_HOME}/tt_metal/hw/inc/$ENV{ARCH_NAME}
-                            $ENV{TT_METAL_HOME}/tt_metal/hw/inc/
-                            $ENV{TT_METAL_HOME}/tt_metal/third_party/umd/src/firmware/riscv/$ENV{ARCH_NAME}
-                            $ENV{TT_METAL_HOME}/tt_metal/detail
-                            $ENV{TT_METAL_HOME}/tt_metal/hostdevcommon
-                            $ENV{TT_METAL_HOME}/tt_metal/include
-                            $ENV{TT_METAL_HOME}/tt_metal/third_party/
-                            $ENV{TT_METAL_HOME}/tt_metal/third_party/fmt
-                            $ENV{TT_METAL_HOME}/tt_metal/third_party/pybind11/include
+target_compile_definitions(my_foo PRIVATE
+    ARCH_$<UPPER_CASE:$ENV{ARCH_NAME}>
+    FMT_HEADER_ONLY
 )
 
-target_link_directories(example-tt-project PRIVATE
+target_compile_options(my_foo PRIVATE
+    -Werror
+    -Wdelete-non-virtual-dtor
+    -Wreturn-type
+    -Wswitch
+    -Wuninitialized
+    -Wno-unused-parameter
+    -mavx2
+    -fPIC
+    -fvisibility-inlines-hidden
+    -fno-lto
+    # Clang-specific options
+    $<$<CXX_COMPILER_ID:Clang>:-Wsometimes-uninitialized>
+    $<$<CXX_COMPILER_ID:Clang>:-Wno-c++11-narrowing>
+    $<$<CXX_COMPILER_ID:Clang>:-Wno-error=local-type-template-args>
+    $<$<CXX_COMPILER_ID:Clang>:-Wno-delete-non-abstract-non-virtual-dtor>
+    $<$<CXX_COMPILER_ID:Clang>:-Wno-c99-designator>
+    $<$<CXX_COMPILER_ID:Clang>:-Wno-shift-op-parentheses>
+    $<$<CXX_COMPILER_ID:Clang>:-Wno-non-c-typedef-for-linkage>
+    $<$<CXX_COMPILER_ID:Clang>:-Wno-deprecated-this-capture>
+    $<$<CXX_COMPILER_ID:Clang>:-Wno-deprecated-volatile>
+    $<$<CXX_COMPILER_ID:Clang>:-Wno-deprecated-builtins>
+    $<$<CXX_COMPILER_ID:Clang>:-Wno-deprecated-declarations>
+    # GCC-specific options
+    $<$<CXX_COMPILER_ID:GNU>:-Wno-deprecated>
+    $<$<CXX_COMPILER_ID:GNU>:-Wno-deprecated-declarations>
+    $<$<CXX_COMPILER_ID:GNU>:-Wno-attributes>
+    $<$<CXX_COMPILER_ID:GNU>:-Wno-stringop-overread>
+    $<$<CXX_COMPILER_ID:GNU>:-Wno-stringop-overflow>
+    $<$<CXX_COMPILER_ID:GNU>:-Wno-maybe-uninitialized>
+    $<$<CXX_COMPILER_ID:GNU>:-Wno-missing-requires>
+    $<$<CXX_COMPILER_ID:GNU>:-Wno-narrowing>
+    $<$<CXX_COMPILER_ID:GNU>:-Wno-non-template-friend>
+    $<$<CXX_COMPILER_ID:GNU>:-Wno-error=non-template-friend>
+)
+
+target_include_directories(my_foo PRIVATE
+    $ENV{TT_METAL_HOME}
+    $ENV{TT_METAL_HOME}/tt_metal
+    $ENV{TT_METAL_HOME}/tt_metal/third_party/umd
+    $ENV{TT_METAL_HOME}/tt_metal/third_party/umd/device
+    $ENV{TT_METAL_HOME}/tt_metal/hw/inc/$ENV{ARCH_NAME}
+    $ENV{TT_METAL_HOME}/tt_metal/hw/inc/
+    $ENV{TT_METAL_HOME}/tt_metal/third_party/umd/src/firmware/riscv/$ENV{ARCH_NAME}
+    $ENV{TT_METAL_HOME}/tt_metal/detail
+    $ENV{TT_METAL_HOME}/tt_metal/hostdevcommon
+    $ENV{TT_METAL_HOME}/tt_metal/include
+    $ENV{TT_METAL_HOME}/tt_metal/third_party/
+    $ENV{TT_METAL_HOME}/tt_metal/third_party/fmt
+    $ENV{TT_METAL_HOME}/tt_metal/third_party/pybind11/include
+
+    # TTNN
+    $ENV{TT_METAL_HOME}/ttnn/cpp
+    $ENV{TT_METAL_HOME}/ttnn/cpp/ttnn/deprecated
+    $ENV{TT_METAL_HOME}/tt_metal/third_party/magic_enum
+
+)
+
+target_link_directories(my_foo PRIVATE
     $ENV{TT_METAL_HOME}/build/lib
 )
 
-target_link_libraries(example-tt-project PRIVATE
-                        stdlib
-                        metal_common_libs
-                        linker_flags
-                        compiler_flags
-                        tt_metal
-                        yaml-cpp
+target_link_libraries(my_foo PRIVATE
+    fmt
+    range-v3
+    magic_enum
+    Reflect::Reflect
+    yaml-cpp
+    Boost::core
+    Boost::smart_ptr
+    Boost::container
+    dl
+    z
+    pthread
+    atomic
+    hwloc
+    numa
+    tt_metal
+    $ENV{TT_METAL_HOME}/build/lib/_ttnn.so
+    $ENV{TT_METAL_HOME}/build/lib/libdevice.so
+    $ENV{TT_METAL_HOME}/build/lib/libuv.so.1
+    $ENV{TT_METAL_HOME}/build/lib/libnng.so.1
+    $ENV{TT_METAL_HOME}/build/lib/libtt_metal.so
 )
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_options(my_foo PRIVATE -O0 -g -DDEBUG)
+elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+    target_compile_options(my_foo PRIVATE -O3)
+elseif(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+    target_compile_options(my_foo PRIVATE -O3 -g -DDEBUG)
+else()
+    message(WARNING "Defaulting to Release build")
+    target_compile_options(my_foo PRIVATE -O3)
+endif()
+
+if(ENABLE_LIBCXX)
+    target_compile_options(my_foo PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-stdlib=libc++>)
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        target_link_options(my_foo PRIVATE -lc++ -lc++abi)
+    endif()
+else()
+    target_compile_options(my_foo PRIVATE -fsized-deallocation)
+endif()

@@ -3,5 +3,6 @@
 build/
 CMakeCache.txt
 CmakeFiles/
+runtime/
 *.swp
 *~
