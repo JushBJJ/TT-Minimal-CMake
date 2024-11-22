@@ -1,5 +1,7 @@
 # A minimal TT-Metal CMake template
 
+**This is currently outdated but will update soon**
+
 This is a minimal working cmake template to start off your TT-Metal projects. It is essentially a stripped down of TT-Metal's CMakeLists and depenencies allowing your projects to easily be built allowing newbies to have a good easy-access on creating their kernels rather than trying to figure out what to folders/libs to import in their cmake files.
 
 ## Instructions
