@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/tt-metal/**/*",
+                "/tt-metal/tt_metal/**",
+                "/tt-metal"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/clang-17",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-clang-x64"
+        }
+    ],
+    "version": 4
+}

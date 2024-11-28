@@ -67,6 +67,7 @@ target_compile_definitions(my_foo PRIVATE
 
 target_compile_options(my_foo PRIVATE
     -Werror
+    -Wno-deprecated-declarations
     -Wdelete-non-virtual-dtor
     -Wreturn-type
     -Wswitch
@@ -87,10 +88,8 @@ target_compile_options(my_foo PRIVATE
     $<$<CXX_COMPILER_ID:Clang>:-Wno-deprecated-this-capture>
     $<$<CXX_COMPILER_ID:Clang>:-Wno-deprecated-volatile>
     $<$<CXX_COMPILER_ID:Clang>:-Wno-deprecated-builtins>
-    $<$<CXX_COMPILER_ID:Clang>:-Wno-deprecated-declarations>
     # GCC-specific options
     $<$<CXX_COMPILER_ID:GNU>:-Wno-deprecated>
-    $<$<CXX_COMPILER_ID:GNU>:-Wno-deprecated-declarations>
     $<$<CXX_COMPILER_ID:GNU>:-Wno-attributes>
     $<$<CXX_COMPILER_ID:GNU>:-Wno-stringop-overread>
     $<$<CXX_COMPILER_ID:GNU>:-Wno-stringop-overflow>
