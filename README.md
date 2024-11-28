@@ -47,10 +47,10 @@ Make sure you specify your CXX and C compiler for cmake to use. Additionally, se
 
 ```sh
 # Clang-17
-cmake -S . -B build -DCMAKE_CXX_COMPILER=/usr/bin/clang++-17 -DCMAKE_C_COMPILER=/usr/bin/clang-17 -DENABLE_LIBCXX=on
+cmake -S . -B build -DCMAKE_CXX_COMPILER=clang++-17 -DCMAKE_C_COMPILER=clang-17 -DENABLE_LIBCXX=on
 
 # GCC
-cmake -S . -B build -DCMAKE_CXX_COMPILER=/usr/bin/g++ -DCMAKE_C_COMPILER=/usr/bin/gcc -DENABLE_LIBCXX=on
+cmake -S . -B build -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc -DENABLE_LIBCXX=on
 ```
 
 Next, run `make` to compile:
