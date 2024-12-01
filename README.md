@@ -1,4 +1,4 @@
-# A minimal TT-Metal CMake template
+# Mini-template for TT-Metal
 
 
 This is a minimal working cmake template to start off your TT-Metal projects. It is essentially ~~a stripped down of~~ TT-Metal's CMakeLists and dependencies allowing your projects to easily be built allowing newbies to have a good easy-access on creating their kernels rather than trying to figure out what to folders/libs to import in their cmake files.
@@ -6,6 +6,11 @@ This is a minimal working cmake template to start off your TT-Metal projects. It
 ## Does this work?
 This depends on how old this repo was last updated, TT-Metal's way of building may change so the more later this has been updated the more likely it is outdated but I will try my best to make it as up to date as possible. This template also assumes you're running on the near-latest commit of Metallium.
 
+
+## Other useful templates
+Marty's TTNN hello-world C++ template: https://github.com/marty1885/ttnn-helloworld-cpp
+
+Tenstorrent's TTNN C++ project template: https://github.com/tenstorrent/cpp-ttnn-project-template
 
 ## Using this in your own project
 If you're using this for your project, rename `my_foo` to your project name and add in your .cpp files into the executable target.
@@ -49,8 +54,8 @@ Make sure you specify your CXX and C compiler for cmake to use. Additionally, se
 # Clang-17
 cmake -S . -B build -DCMAKE_CXX_COMPILER=clang++-17 -DCMAKE_C_COMPILER=clang-17 -DENABLE_LIBCXX=on
 
-# GCC
-cmake -S . -B build -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc -DENABLE_LIBCXX=on
+# g++-12
+cmake -S . -B build -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_C_COMPILER=gcc-12 -DENABLE_LIBCXX=on
 ```
 
 Next, run `make` to compile:
