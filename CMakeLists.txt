@@ -129,24 +129,15 @@ target_link_directories(my_foo PRIVATE
 
 target_link_libraries(my_foo PRIVATE
     fmt
-    range-v3
     magic_enum
     Reflect::Reflect
     yaml-cpp
     Boost::core
     Boost::smart_ptr
     Boost::container
-    dl
-    z
-    pthread
-    atomic
-    hwloc
     numa
     tt_metal
-    $ENV{TT_METAL_HOME}/build/lib/_ttnn.so
     $ENV{TT_METAL_HOME}/build/lib/libdevice.so
-    $ENV{TT_METAL_HOME}/build/lib/libuv.so.1
-    $ENV{TT_METAL_HOME}/build/lib/libnng.so.1
     $ENV{TT_METAL_HOME}/build/lib/libtt_metal.so
 )
 
